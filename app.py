@@ -75,7 +75,7 @@ def gen_frames():
 
                 # Mode switching
                 if fingers == [0, 0, 0, 0, 0] and active == 0:
-                    mode = 'N'
+                    mode = 'None'
                 elif (fingers == [0, 1, 0, 0, 0] or fingers == [0, 1, 1, 0, 0]) and active == 0:
                     mode = 'Scroll'
                     active = 1
@@ -90,21 +90,21 @@ def gen_frames():
             if mode == 'Scroll':
                 putText(img, mode)
                 if fingers == [0, 1, 0, 0, 0]:
-                    putText(img, 'U', loc=(200, 455), color=(0, 255, 0))
+                    putText(img, 'Up', loc=(20, 440), color=(0, 255, 0))
                     pyautogui.scroll(300)
                 elif fingers == [0, 1, 1, 0, 0]:
-                    putText(img, 'D', loc=(200, 455), color=(0, 0, 255))
+                    putText(img, 'Down', loc=(20, 470), color=(0, 0, 255))
                     pyautogui.scroll(-300)
                 elif fingers == [0, 0, 0, 0, 0]:
                     active = 0
-                    mode = 'N'
+                    mode = 'None'
 
             # VOLUME MODE
             elif mode == 'Volume':
                 putText(img, mode)
                 if fingers and fingers[-1] == 1:
                     active = 0
-                    mode = 'N'
+                    mode = 'None'
                 elif len(lmList) >= 9:
                     x1, y1 = lmList[4][1], lmList[4][2]
                     x2, y2 = lmList[8][1], lmList[8][2]
@@ -125,7 +125,7 @@ def gen_frames():
                 putText(img, mode)
                 if fingers[1:] == [0, 0, 0, 0]:
                     active = 0
-                    mode = 'N'
+                    mode = 'None'
                 elif len(lmList) >= 9:
                     x1, y1 = lmList[8][1], lmList[8][2]
                     w, h = autopy.screen.size()

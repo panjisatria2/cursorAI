@@ -1,15 +1,56 @@
 body {
     font-family: Arial, sans-serif;
     text-align: center;
-    background: #f7f7f7;
+    background: linear-gradient(to right, #f7f7f7, #e0f7fa);
+    margin: 0;
+    padding: 0;
 }
 
 h1 {
     color: #333;
+    margin-bottom: 20px;
+    animation: fadeIn 1s ease;
 }
 
 .video-container {
     display: inline-block;
     border: 3px solid #555;
+    border-radius: 10px;
     margin-top: 20px;
+    padding: 10px;
+    background-color: white;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+}
+
+.video-container img {
+    border-radius: 10px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease;
+}
+
+.video-container img:hover {
+    transform: scale(1.02);
+}
+
+#status {
+    font-size: 20px;
+    color: #444;
+    margin-bottom: 10px;
+}
+
+#mode {
+    font-weight: bold;
+    color: #0077cc;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
