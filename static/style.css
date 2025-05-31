@@ -1,0 +1,15 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: #f7f7f7;
+}
+
+h1 {
+    color: #333;
+}
+
+.video-container {
+    display: inline-block;
+    border: 3px solid #555;
+    margin-top: 20px;
+}
