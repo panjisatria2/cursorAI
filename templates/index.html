@@ -1,15 +1,20 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Kontrol Gerakan Tangan</title>
     <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
     <h1>Kontrol Gerakan Tangan</h1>
     <div class="video-container">
         <img src="{{ url_for('video') }}" alt="Video Stream" width="720">
     </div>
-
+    <script>
+        const modeText = document.getElementById('mode');
+    </script>
 </body>
+
 </html>

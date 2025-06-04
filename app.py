@@ -1,34 +1,35 @@
 from flask import Flask, render_template, Response
-import cv2  # OpenCV untuk menangani video
-import numpy as np 
-import HandTrackingModule as htm # Modul untuk deteksi tangan
-import math 
-import autopy # Untuk kontrol mouse
-import pyautogui # Untuk kontrol mouse dan keyboard
+import cv2 
+import numpy as np
+import HandTrackingModule as htm
+import math
+import autopy #
+import pyautogui
 import time
-from ctypes import cast, POINTER  
-from comtypes import CLSCTX_ALL 
+from ctypes import cast, POINTER
+from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+import os
+from datetime import datetime
 
 app = Flask(__name__)
 
-# Inisialisasi kamera
+# Setup webcam
 wCam, hCam = 640, 480
 cap = cv2.VideoCapture(0)
 cap.set(3, wCam)
 cap.set(4, hCam)
 
-# Inisialisasi detektor tangan
+# Setup Hand Detector
 detector = htm.HandDetector(maxHands=1, detectionCon=0.85, trackCon=0.8)
 
-# Inisialisasi kontrol volume
+# Setup Volume Control
 devices = AudioUtilities.GetSpeakers()
-interface = devices.Activate(
-    IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
+interface = devices.Activate(IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
 volume = cast(interface, POINTER(IAudioEndpointVolume))
 volRange = volume.GetVolumeRange()
 
-# Rentang volume
+# Volume settings
 minVol = -63
 maxVol = volRange[1]
 hmin = 50
@@ -38,18 +39,22 @@ tipIds = [4, 8, 12, 16, 20]
 mode = ''
 active = 0
 pTime = 0
+effect_timer = 0
+
+
+screenshot_dir = "screenshots"
+os.makedirs(screenshot_dir, exist_ok=True)
 
 # Disable pyautogui failsafe to prevent accidental mouse movement
 pyautogui.FAILSAFE = False
 
-# Fungsi untuk menampilkan teks pada gambar
+# untuk menampilkan teks pada gambar
 def putText(img, mode, loc=(250, 450), color=(0, 255, 255)):
-    cv2.putText(img, str(mode), loc, cv2.FONT_HERSHEY_COMPLEX_SMALL,
-                3, color, 3)
+    cv2.putText(img, str(mode), loc, cv2.FONT_HERSHEY_COMPLEX_SMALL, 3, color, 3)
 
-# Fungsi untuk menghasilkan frame video
+# fungsi untuk menghasilkan frame dari kamera
 def gen_frames():
-    global mode, active, pTime
+    global mode, active, pTime, effect_timer
     while True:
         try:
             success, img = cap.read()
@@ -62,20 +67,14 @@ def gen_frames():
 
             if len(lmList) != 0:
                 # Thumb
-                if lmList[tipIds[0]][1] > lmList[tipIds[0] - 1][1]:
-                    fingers.append(1)
-                else:
-                    fingers.append(0)
-
+                fingers.append(1 if lmList[tipIds[0]][1] > lmList[tipIds[0] - 1][1] else 0)
+                # Other fingers
                 for id in range(1, 5):
-                    if lmList[tipIds[id]][2] < lmList[tipIds[id] - 2][2]:
-                        fingers.append(1)
-                    else:
-                        fingers.append(0)
+                    fingers.append(1 if lmList[tipIds[id]][2] < lmList[tipIds[id] - 2][2] else 0)
 
                 # Mode switching
                 if fingers == [0, 0, 0, 0, 0] and active == 0:
-                    mode = 'N'
+                    mode = 'None'
                 elif (fingers == [0, 1, 0, 0, 0] or fingers == [0, 1, 1, 0, 0]) and active == 0:
                     mode = 'Scroll'
                     active = 1
@@ -85,30 +84,44 @@ def gen_frames():
                 elif fingers == [1, 1, 1, 1, 1] and active == 0:
                     mode = 'Cursor'
                     active = 1
+                elif fingers == [0, 1, 1, 1, 1] and active == 0:
+                    mode = 'Screenshot'
+                    active = 1
+
+                    # Screenshot layar penuh
+                    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+                    filename = f"{screenshot_dir}/screenshot_{timestamp}.png"
+                    screen = pyautogui.screenshot()
+                    screen.save(filename)
+                    print(f"📸 Screenshot  disimpan: {filename}")
+
+                    effect_timer = time.time()  # trigger effect
+                    mode = 'None'
+                    active = 0
 
             # SCROLL MODE
             if mode == 'Scroll':
                 putText(img, mode)
                 if fingers == [0, 1, 0, 0, 0]:
-                    putText(img, 'U', loc=(200, 455), color=(0, 255, 0))
+                    putText(img, 'Up', loc=(20, 440), color=(0, 255, 0))
                     pyautogui.scroll(300)
                 elif fingers == [0, 1, 1, 0, 0]:
-                    putText(img, 'D', loc=(200, 455), color=(0, 0, 255))
+                    putText(img, 'Down', loc=(20, 470), color=(0, 0, 255))
                     pyautogui.scroll(-300)
                 elif fingers == [0, 0, 0, 0, 0]:
                     active = 0
-                    mode = 'N'
+                    mode = 'None'
 
             # VOLUME MODE
             elif mode == 'Volume':
                 putText(img, mode)
                 if fingers and fingers[-1] == 1:
                     active = 0
-                    mode = 'N'
+                    mode = 'None'
                 elif len(lmList) >= 9:
                     x1, y1 = lmList[4][1], lmList[4][2]
                     x2, y2 = lmList[8][1], lmList[8][2]
-                    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+                    cv2.line(img, (x1, y1), (x2, y2), color, 3)
                     length = math.hypot(x2 - x1, y2 - y1)
 
                     vol = np.interp(length, [hmin, hmax], [minVol, maxVol])
@@ -125,7 +138,7 @@ def gen_frames():
                 putText(img, mode)
                 if fingers[1:] == [0, 0, 0, 0]:
                     active = 0
-                    mode = 'N'
+                    mode = 'None'
                 elif len(lmList) >= 9:
                     x1, y1 = lmList[8][1], lmList[8][2]
                     w, h = autopy.screen.size()
@@ -135,29 +148,37 @@ def gen_frames():
                     if fingers[0] == 0:
                         pyautogui.click()
 
-            # FPS Monitoring
+            # Screenshot effect
+            if effect_timer and time.time() - effect_timer < 0.5:
+                cv2.putText(img, "Screenshot!", (150, 200), cv2.FONT_HERSHEY_DUPLEX, 2.5, (0, 0, 255), 6)
+                cv2.rectangle(img, (0, 0), (wCam, hCam), (0, 0, 255), 25)
+            elif effect_timer:
+                effect_timer = 0
+
+            # FPS Display
             cTime = time.time()
             fps = 1 / ((cTime + 0.01) - pTime)
             pTime = cTime
             cv2.putText(img, f'FPS:{int(fps)}', (480, 50), cv2.FONT_ITALIC, 1, (255, 0, 0), 2)
 
-            # Encode & yield frame
+            # Encode image to JPEG format
             ret, buffer = cv2.imencode('.jpg', img)
             frame = buffer.tobytes()
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
+            time.sleep(0.03)
 
-            time.sleep(0.03)  # biar tidak ngefreeze browser/kamera
+        # Handle exceptions
         except Exception as e:
             print(f"⚠️ Error dalam gen_frames(): {e}")
             break
 
-# Flask app setup
+#flask app setup
 @app.route('/')
 def index():
     return render_template('index.html')
 
-# Route untuk video streaming
+#route untuk video streaming
 @app.route('/video')
 def video():
     return Response(gen_frames(), mimetype='multipart/x-mixed-replace; boundary=frame')
