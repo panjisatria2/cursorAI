@@ -3,7 +3,7 @@ import cv2
 import numpy as np
 import HandTrackingModule as htm
 import math
-import autopy #
+import autopy 
 import pyautogui
 import time
 from ctypes import cast, POINTER
@@ -42,7 +42,7 @@ pTime = 0
 effect_timer = 0
 
 
-screenshot_dir = "screenshots"
+screenshot_dir = "HasilScreenshoots"
 os.makedirs(screenshot_dir, exist_ok=True)
 
 # Disable pyautogui failsafe to prevent accidental mouse movement
@@ -88,7 +88,7 @@ def gen_frames():
                     mode = 'Screenshot'
                     active = 1
 
-                    # Screenshot layar penuh
+                    # Screenshot 
                     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
                     filename = f"{screenshot_dir}/screenshot_{timestamp}.png"
                     screen = pyautogui.screenshot()
